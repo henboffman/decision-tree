@@ -1,3 +1,26 @@
 .message {
   background-color: lightblue;
 }
+
+.dropdown-menu .dropdown-item {
+  /* Ensure icons and text are aligned nicely */
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  /* Space between icon and text */
+}
+
+.bi {
+  /* Give icons a consistent width */
+  width: 1.25em;
+}
+
+.clickable:hover {
+  cursor: pointer;
+}
+
+.step-header {
+  font-weight: 700;
+  color: var(--text-color);
+  font-size: 1.25rem;
+}

@@ -1,5 +1,6 @@
 // --- CHANGE 1: Import Formio instead of Form ---
 import { Formio } from 'formiojs';
+import { SampleWorkflows } from './sample-workflows';
 
 export interface WorkflowStep {
     id: string;
@@ -17,7 +18,6 @@ export interface WorkflowDefinition {
     currentStep: number;
 }
 
-
 export class FormioService {
     private workflows: Map<string, WorkflowDefinition> = new Map();
 
@@ -26,102 +26,16 @@ export class FormioService {
     }
 
     private initializeSampleWorkflows(): void {
-        const sampleWorkflow: WorkflowDefinition = {
-            id: 'user-onboarding',
-            title: 'User Onboarding Process',
-            description: 'Complete guided setup for new users',
-            currentStep: 0,
-            steps: [
-                {
-                    id: 'personal-info',
-                    title: 'Personal Information',
-                    completed: false,
-                    form: {
-                        components: [
-                            {
-                                type: 'textfield',
-                                key: 'firstName',
-                                label: 'First Name',
-                                placeholder: 'Enter your first name',
-                                validate: { required: true }
-                            },
-                            {
-                                type: 'textfield',
-                                key: 'lastName',
-                                label: 'Last Name',
-                                placeholder: 'Enter your last name',
-                                validate: { required: true }
-                            },
-                            {
-                                type: 'email',
-                                key: 'email',
-                                label: 'Email Address',
-                                placeholder: 'Enter your email',
-                                validate: { required: true }
-                            }
-                        ]
-                    }
-                },
-                {
-                    id: 'preferences',
-                    title: 'Preferences',
-                    completed: false,
-                    form: {
-                        components: [
-                            {
-                                type: 'select',
-                                key: 'department',
-                                label: 'Department',
-                                data: {
-                                    values: [
-                                        { label: 'Engineering', value: 'engineering' },
-                                        { label: 'Marketing', value: 'marketing' },
-                                        { label: 'Sales', value: 'sales' },
-                                        { label: 'HR', value: 'hr' }
-                                    ]
-                                },
-                                validate: { required: true }
-                            },
-                            {
-                                type: 'radio',
-                                key: 'experience',
-                                label: 'Experience Level',
-                                values: [
-                                    { label: 'Beginner', value: 'beginner' },
-                                    { label: 'Intermediate', value: 'intermediate' },
-                                    { label: 'Advanced', value: 'advanced' }
-                                ],
-                                validate: { required: true }
-                            }
-                        ]
-                    }
-                },
-                {
-                    id: 'review',
-                    title: 'Review & Submit',
-                    completed: false,
-                    form: {
-                        components: [
-                            {
-                                type: 'htmlelement',
-                                key: 'reviewText',
-                                tag: 'div',
-                                content: '<p>Please review your information before submitting:</p>'
-                            },
-                            {
-                                type: 'checkbox',
-                                key: 'confirmation',
-                                label: 'I confirm that all information is correct',
-                                validate: { required: true }
-                            }
-                        ]
-                    }
-                }
-            ]
-        };
 
-        this.workflows.set(sampleWorkflow.id, sampleWorkflow);
-        console.log(this.workflows);
+
+        // Add all workflows to the map
+        this.workflows.set(SampleWorkflows.userOnboardingWorkflow.id, SampleWorkflows.userOnboardingWorkflow);
+        this.workflows.set(SampleWorkflows.performanceReviewWorkflow.id, SampleWorkflows.performanceReviewWorkflow);
+        this.workflows.set(SampleWorkflows.supportTicketWorkflow.id, SampleWorkflows.supportTicketWorkflow);
+        this.workflows.set(SampleWorkflows.projectProposalWorkflow.id, SampleWorkflows.projectProposalWorkflow);
+        this.workflows.set(SampleWorkflows.eventRegistrationWorkflow.id, SampleWorkflows.eventRegistrationWorkflow);
+
+        console.log('Initialized workflows:', Array.from(this.workflows.keys()));
     }
 
     getWorkflow(workflowId: string): WorkflowDefinition | undefined {
@@ -154,7 +68,6 @@ export class FormioService {
 
         return form;
     }
-
 
     saveStepData(workflowId: string, stepId: string, data: any): void {
         const workflow = this.workflows.get(workflowId);

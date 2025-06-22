@@ -15,54 +15,104 @@ export class Workflow {
     isComplete: boolean = false;
     private _progressVersion: number = 0;
     private disableLocalStorageLoad: boolean = true; // Flag to disable local storage loading
-
+    availableWorkflows: WorkflowDefinition[] = [];
 
     constructor(private formioService: FormioService, private logger: ILogger) {
     }
 
+    // async attached(): Promise<void> {
+    //     const workflow = this.formioService.getWorkflow('user-onboarding');
+    //     if (!workflow) return;
+
+    //     this.currentWorkflow = workflow;
+
+    //     const lastModifiedWorkflowJson = localStorage.getItem(LocalStorageKeys.LAST_MODIFIED_WORKFLOW);
+    //     if (lastModifiedWorkflowJson && !this.disableLocalStorageLoad) {
+    //         const loadWorkflow = confirm('Do you want to load your saved progress?');
+    //         if (loadWorkflow) {
+    //             try {
+    //                 const savedState = JSON.parse(lastModifiedWorkflowJson);
+    //                 this.logger.info('Loading saved state from Local Storage:', savedState);
+
+    //                 // Ensure the saved data is for the correct workflow
+    //                 if (savedState.workflowId === this.currentWorkflow.id) {
+
+    //                     // Restore the data for all steps
+    //                     this.dataEntries = savedState.dataEntries || {};
+
+    //                     // Restore the user's position in the workflow
+    //                     this.currentWorkflow.currentStep = savedState.currentStep || 0;
+
+    //                     // (Optional but good practice) Sync loaded data back to the service
+    //                     Object.keys(this.dataEntries).forEach(stepId => {
+    //                         this.formioService.saveStepData(
+    //                             this.currentWorkflow.id,
+    //                             stepId,
+    //                             this.dataEntries[stepId]
+    //                         );
+    //                     });
+    //                 }
+
+    //             } catch (error) {
+    //                 this.logger.error('Failed to parse or load saved workflow:', error);
+    //                 localStorage.removeItem(LocalStorageKeys.LAST_MODIFIED_WORKFLOW);
+    //             }
+    //         }
+    //     }
+
+    //     await this.loadCurrentStep();
+    // }
+
     async attached(): Promise<void> {
-        const workflow = this.formioService.getWorkflow('user-onboarding');
+        // Fetch all workflows for the user to choose from
+        this.availableWorkflows = this.formioService.getAllWorkflows();
+        this.currentWorkflow = null; // Start with no workflow selected
+    }
+
+    async selectWorkflow(workflowId: string): Promise<void> {
+        if (!workflowId) return;
+
+        const workflow = this.formioService.getWorkflow(workflowId);
         if (!workflow) return;
 
+        // Reset state for the newly selected workflow
+        this.isComplete = false;
+        this.dataEntries = {};
         this.currentWorkflow = workflow;
 
+        // --- Logic moved from attached() ---
         const lastModifiedWorkflowJson = localStorage.getItem(LocalStorageKeys.LAST_MODIFIED_WORKFLOW);
         if (lastModifiedWorkflowJson && !this.disableLocalStorageLoad) {
-            const loadWorkflow = confirm('Do you want to load your saved progress?');
+            const loadWorkflow = confirm('Do you want to load your saved progress for this workflow?');
             if (loadWorkflow) {
                 try {
                     const savedState = JSON.parse(lastModifiedWorkflowJson);
-                    this.logger.info('Loading saved state from Local Storage:', savedState);
-
-                    // Ensure the saved data is for the correct workflow
                     if (savedState.workflowId === this.currentWorkflow.id) {
-
-                        // Restore the data for all steps
+                        this.logger.info('Loading saved state:', savedState);
                         this.dataEntries = savedState.dataEntries || {};
-
-                        // Restore the user's position in the workflow
                         this.currentWorkflow.currentStep = savedState.currentStep || 0;
-
-                        // (Optional but good practice) Sync loaded data back to the service
                         Object.keys(this.dataEntries).forEach(stepId => {
-                            this.formioService.saveStepData(
-                                this.currentWorkflow.id,
-                                stepId,
-                                this.dataEntries[stepId]
-                            );
+                            this.formioService.saveStepData(this.currentWorkflow.id, stepId, this.dataEntries[stepId]);
                         });
                     }
-
                 } catch (error) {
-                    this.logger.error('Failed to parse or load saved workflow:', error);
+                    this.logger.error('Failed to load saved workflow:', error);
                     localStorage.removeItem(LocalStorageKeys.LAST_MODIFIED_WORKFLOW);
                 }
             }
         }
-        // --- END CHANGE ---
-
         await this.loadCurrentStep();
     }
+
+    changeWorkflow(): void {
+        this.currentWorkflow = null;
+        this.isComplete = false;
+        if (this.currentForm) {
+            this.currentForm.destroy();
+            this.currentForm = null;
+        }
+    }
+
     detached(): void {
         if (this.currentForm) {
             this.currentForm.destroy();
@@ -118,7 +168,6 @@ export class Workflow {
             console.log('Simple Form changed event (for info, primary data capture via formio.change):', submission.data);
         });
 
-        // CRITICAL CHANGE: Update dataEntries and save from formio.change event
         this.currentForm.events.onAny((eventName: string, changed: any) => {
             if (eventName === 'formio.change') {
                 this.dataEntries[this.currentStep.id] = { ...changed.data };
@@ -132,7 +181,6 @@ export class Workflow {
                 this.canProceed = changed.isValid;
                 this._progressVersion++;
 
-                // --- CHANGE 2: AUTOMATICALLY SAVE ON EVERY CHANGE ---
                 this.saveCurrentWorkflow();
             }
         });
