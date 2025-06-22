@@ -1,0 +1,80 @@
+<template>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Form Management</h2>
+            <button class="btn btn-primary" click.trigger="createNewForm()">
+                Create New Form
+            </button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Available Workflows</h5>
+                    </div>
+                    <div class="card-body">
+                        <div if.bind="workflows.length === 0" class="text-center p-4">
+                            <p class="text-muted">No workflows available</p>
+                        </div>
+
+                        <div repeat.for="workflow of workflows" class="workflow-item mb-3 p-3 border rounded">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6>${workflow.title}</h6>
+                                    <p class="text-muted mb-2">${workflow.description}</p>
+                                    <small class="text-info">${workflow.steps.length} steps</small>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        click.trigger="editWorkflow(workflow)">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" click.trigger="startWorkflow(workflow)">
+                                        Start
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success" click.trigger="importWorkflow()">
+                                Import Workflow
+                            </button>
+                            <button class="btn btn-outline-info" click.trigger="exportWorkflows()">
+                                Export All
+                            </button>
+                            <button class="btn btn-outline-warning" click.trigger="duplicateWorkflow()">
+                                Duplicate Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6>Form Builder</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted">
+                            Create custom forms with drag-and-drop components,
+                            validation rules, and conditional logic.
+                        </p>
+                        <button class="btn btn-primary w-100" click.trigger="openFormBuilder()">
+                            Open Form Builder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

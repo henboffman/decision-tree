@@ -1,0 +1,53 @@
+<template>
+    <div class="container">
+        <h2>Settings</h2>
+
+        <!-- Log Level Selection -->
+        <div class="form-group mb-4">
+            <label for="logLevel" class="form-label">Application Log Level</label>
+            <select class="form-select" value.bind="selectedLogLevel" id="logLevel">
+                <option repeat.for="level of logLevels" model.bind="level.value">
+                    ${level.name}
+                </option>
+            </select>
+            <div class="form-text">Changes the verbosity of application logging</div>
+        </div>
+
+        <!-- Console Output Toggles -->
+        <div class="form-group">
+            <h4>Console Output Controls</h4>
+
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" checked.bind="allowConsoleLogging" id="consoleLogging">
+                <label class="form-check-label" for="consoleLogging">
+                    Enable Console Log
+                </label>
+            </div>
+
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" checked.bind="allowConsoleInfo" id="consoleInfo">
+                <label class="form-check-label" for="consoleInfo">
+                    Enable Console Info
+                </label>
+            </div>
+
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" checked.bind="allowConsoleWarn" id="consoleWarn">
+                <label class="form-check-label" for="consoleWarn">
+                    Enable Console Warn
+                </label>
+            </div>
+
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" checked.bind="allowConsoleError" id="consoleError">
+                <label class="form-check-label" for="consoleError">
+                    Enable Console Error
+                </label>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3">
+            <small>Note: Some logging changes may require a page refresh to take full effect.</small>
+        </div>
+    </div>
+</template>

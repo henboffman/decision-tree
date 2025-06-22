@@ -1,0 +1,89 @@
+<template>
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Workflow Progress Sidebar -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>${currentWorkflow.title}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">${currentWorkflow.description}</p>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" css.bind="{ width: progress + '%' }"
+                            aria-valuenow.bind="progress" aria-valuemin="0" aria-valuemax="100">
+                            ${progress}%
+                        </div>
+                    </div>
+
+                    <!-- Step Navigation -->
+                    <div class="list-group">
+                        <div repeat.for="step of currentWorkflow.steps"
+                            class="list-group-item list-group-item-action ${step.completed ? 'list-group-item-success' : ''} ${$index === currentWorkflow.currentStep ? 'active' : ''}"
+                            click.trigger="goToStep($index)">
+                            <div class="d-flex w-100 justify-content-between">
+                                <small class="text-muted">Step ${$index + 1}</small>
+                                <span if.bind="step.completed" class="badge bg-success">✓</span>
+                            </div>
+                            <h6 class="mb-1">${step.title}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Main Workflow Content -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>Step ${currentWorkflow.currentStep + 1}: ${currentStep.title}</h4>
+                    <div class="">
+
+                        <button class="btn btn-outline-secondary ms-2" click.trigger="exportCurrentWorkflow()">
+                            <i class="bi bi-download"></i> Data
+                        </button>
+                        <button class="btn btn-outline-secondary" click.trigger="exportCurrentWorkflowConfiguration()">
+                            <i class="bi bi-download"></i> Config
+                        </button>
+                        <button class="btn btn-outline-secondary ms-4" click.trigger="previousStep()"
+                            disabled.bind="currentWorkflow.currentStep === 0">
+                            ← Previous
+                        </button>
+                        <button class="btn btn-outline-primary" click.trigger="nextStep()" disabled.bind="!canProceed">
+                            ${isLastStep ? 'Complete' : 'Next →'}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Form Container -->
+                    <div ref="formContainer" class="formio-container">
+                        <!-- Form.io form will be rendered here -->
+                    </div>
+
+                    <!-- Loading State -->
+                    <div if.bind="isLoading" class="text-center p-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading form...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Message -->
+            <div if.bind="isComplete" class="alert alert-success mt-3">
+                <h4 class="alert-heading">Workflow Complete!</h4>
+                <p>You have successfully completed the ${currentWorkflow.title} workflow.</p>
+                <hr>
+                <button class="btn btn-success" click.trigger="startNewWorkflow()">
+                    Start New Workflow
+                </button>
+                <button class="btn btn-outline-secondary ms-2" click.trigger="exportAsJson()">
+                    Export Workflow as JSON
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
