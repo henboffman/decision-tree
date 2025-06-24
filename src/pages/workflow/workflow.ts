@@ -154,6 +154,23 @@ export class Workflow {
         }
     }
 
+    private calculateProgress(): void {
+        if (!this.currentWorkflow || !this.currentWorkflow.steps.length) {
+            this._progressVersion = 0;
+            return;
+        }
+        console.log(this.currentWorkflow);
+        // get the total number of questions in all steps. we get the count from the number of properties on each step.data object
+        let totalQuestions = 0;
+        this.currentWorkflow.steps.forEach(step => {
+            const stepData = this.dataEntries[step.id] || {};
+            const numQuestions = Object.keys(stepData).length;
+            console.log(`Step "${step.id}" has ${numQuestions} questions.`);
+            totalQuestions += numQuestions;
+        });
+        console.log(`Total answered questions across all steps: ${totalQuestions}`);
+    }
+
     private async setupFormHandlers(): Promise<void> {
         if (!this.currentForm) return;
 
@@ -172,6 +189,7 @@ export class Workflow {
             if (eventName === 'formio.change') {
                 this.dataEntries[this.currentStep.id] = { ...changed.data };
 
+                // this.calculateProgress();
                 this.formioService.saveStepData(
                     this.currentWorkflow.id,
                     this.currentStep.id,
@@ -356,15 +374,142 @@ export class Workflow {
     }
 
 
-    get progress(): number {
-        const prog = this._progressVersion;
+    // get progress(): number {
+    //     const prog = this._progressVersion;
 
+    //     if (!this.currentWorkflow || !this.currentWorkflow.steps.length) {
+    //         return 0;
+    //     }
+
+    //     console.log(this.currentWorkflow);
+    //     let totalQuestions = 0;
+    //     let answeredQuestions = 0;
+    //     this.currentWorkflow.steps.forEach(step => {
+    //         const stepData = this.dataEntries[step.id] || {};
+    //         // const numQuestions = Object.keys(stepData).length;
+    //         const numQuestions = step.form.components.length;
+    //         totalQuestions += numQuestions;
+    //         for (const key in stepData) {
+    //             if (Object.prototype.hasOwnProperty.call(stepData, key) && stepData[key] !== undefined && stepData[key] !== null && stepData[key] !== '') {
+    //                 answeredQuestions++;
+    //             }
+    //         }
+    //     });
+
+    //     console.log(`Total answered questions: ${answeredQuestions} out of ${totalQuestions}`);
+
+    //     const completedSteps = this.currentWorkflow.steps.filter(step => step.completed).length;
+    //     // return Math.round((completedSteps / this.currentWorkflow.steps.length) * 100);
+    //     return Math.round((answeredQuestions / totalQuestions) * 100);
+    // }
+
+    get progress(): number {
         if (!this.currentWorkflow || !this.currentWorkflow.steps.length) {
             return 0;
         }
 
-        const completedSteps = this.currentWorkflow.steps.filter(step => step.completed).length;
-        return Math.round((completedSteps / this.currentWorkflow.steps.length) * 100);
+        let totalQuestions = 0;
+        let answeredQuestions = 0;
+        console.log(this.currentWorkflow);
+
+        this.currentWorkflow.steps.forEach(step => {
+            const stepData = this.dataEntries[step.id] || {};
+
+            // Recursively count all input components
+            const inputComponents = this.getInputComponents(step.form.components);
+            totalQuestions += inputComponents.length;
+
+            // Count answered questions
+            inputComponents.forEach(component => {
+                console.log(component);
+                if (this.isComponentAnswered(component.key, stepData)) {
+                    answeredQuestions++;
+                }
+            });
+        });
+
+        console.log(`Total answered questions: ${answeredQuestions} out of ${totalQuestions}`);
+        return totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+    }
+
+    /**
+     * Recursively extracts all input components from a form structure
+     */
+    private getInputComponents(components: any[]): any[] {
+        const inputComponents: any[] = [];
+
+        // Component types that should be counted as questions
+        const inputTypes = [
+            'textfield', 'textarea', 'number', 'password', 'email', 'url', 'phoneNumber',
+            'select', 'selectboxes', 'checkbox', 'radio', 'datetime', 'day', 'time',
+            'currency', 'survey', 'signature', 'file', 'tags', 'address'
+        ];
+
+        components.forEach(component => {
+            // Skip hidden components
+            if (component.hidden) {
+                return;
+            }
+
+            // If it's an input component, add it
+            if (inputTypes.includes(component.type)) {
+                inputComponents.push(component);
+            }
+
+            // Recursively check nested components
+            if (component.components && Array.isArray(component.components)) {
+                inputComponents.push(...this.getInputComponents(component.components));
+            }
+
+            // Handle special container types
+            if (component.type === 'datagrid' && component.components) {
+                inputComponents.push(...this.getInputComponents(component.components));
+            }
+
+            if (component.type === 'editgrid' && component.components) {
+                inputComponents.push(...this.getInputComponents(component.components));
+            }
+
+            // Handle columns in layout components
+            if (component.columns && Array.isArray(component.columns)) {
+                component.columns.forEach(column => {
+                    if (column.components) {
+                        inputComponents.push(...this.getInputComponents(column.components));
+                    }
+                });
+            }
+        });
+
+        return inputComponents;
+    }
+
+    /**
+     * Determines if a component has been answered
+     */
+    private isComponentAnswered(key: string, stepData: any): boolean {
+        const value = stepData[key];
+
+        // Handle different types of "empty" values
+        if (value === undefined || value === null) {
+            return false;
+        }
+
+        // For strings, only consider truly empty strings as unanswered
+        if (typeof value === 'string' && value.trim() === '') {
+            return false;
+        }
+
+        // For arrays (multi-select, checkboxes), check if any items are selected
+        if (Array.isArray(value) && value.length === 0) {
+            return false;
+        }
+
+        // For objects (like selectboxes), check if any property is truthy
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            return Object.values(value).some(v => !!v);
+        }
+
+        return true;
     }
 
     get isLastStep(): boolean {
